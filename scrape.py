@@ -1,8 +1,8 @@
+import csv
 import requests
 from bs4 import BeautifulSoup
-import csv
 
-url = "https://www.cnbcindonesia.com/"
+url = "https://www.metrotvnews.com/"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -23,7 +23,7 @@ print("URL:", r.url)
 print("HTML length:", len(r.text))
 
 if r.status_code != 200:
-    print("CNBC blocked the GitHub Actions request.")
+    print("MetroTVNews blocked the GitHub Actions request.")
     print(r.text[:1000])
     raise SystemExit(1)
 
@@ -31,31 +31,30 @@ soup = BeautifulSoup(r.text, "html.parser")
 
 results = []
 
-# Find Most Popular widget
-section = soup.find(
-    "div",
-    attrs={
-        "data-name": "widget",
-        "data-target": "wp_terpopuler"
-    }
+# Find Most Popular widget on MetroTVNews
+section = soup.find("section", class_="most-popular-2") or soup.find(
+    "div", id="popular"
 )
 
 if section:
-    # CNBC puts the title in dtr-ttl
-    headlines = section.find_all(
-        "a",
-        attrs={"dtr-evt": "box terpopuler"}
-    )
+    # Find all popular items
+    items = section.find_all("div", class_="popular-item")
 
-    for a in headlines[:5]:
-        title = a.get("dtr-ttl", "").strip()
+    for item in items[:5]:
+        a_tag = item.select_one("h3 a")
+        date_tag = item.select_one(".date")
 
-        if title:
-            results.append([title])
+        if a_tag:
+            title = a_tag.text.strip()
+            link = a_tag.get("href", "").strip()
+            date = date_tag.text.strip() if date_tag else ""
 
+            results.append([title, link, date])
+
+# Write findings to CSV
 with open("popular.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["Title"])
+    writer.writerow(["Title", "URL", "Date"])
 
     for row in results:
         writer.writerow(row)
@@ -63,4 +62,4 @@ with open("popular.csv", "w", newline="", encoding="utf-8") as f:
 print(f"Done. Found {len(results)} titles.")
 
 for i, row in enumerate(results, 1):
-    print(f"{i}. {row[0]}")
+    print(f"{i}. {row[0]} | {row[2]}")
