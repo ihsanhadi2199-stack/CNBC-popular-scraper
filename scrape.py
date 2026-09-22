@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-url = "https://www.thejakartapost.com/"
+url = "https://www.cnbcindonesia.com/"
 
 headers = {
     "User-Agent": "Mozilla/5.0"
@@ -12,15 +12,15 @@ soup = BeautifulSoup(r.text, "html.parser")
 
 results = []
 
-# find Popular section
-section = soup.select_one("#tjp-home-section-popular")
+# find Most Popular section
+section = soup.select_one('div[data-name="widget"][data-target="wp_terpopuler"]')
 
 if section:
-    # only take headline text (no description, no links)
-    headlines = section.select("h1.tjp-title")
+    # only take headline text
+    headlines = section.select("li strong")
 
-    for h in headlines:
-        title = h.get_text(strip=True)
+    for h in headlines[:5]:
+        title = h.get_text(" ", strip=True)
         if title:
             results.append([title])
 
