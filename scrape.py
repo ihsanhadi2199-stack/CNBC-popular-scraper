@@ -1,44 +1,47 @@
-import csv
 import requests
 from bs4 import BeautifulSoup
+import csv
 
-url = "https://www.metrotvnews.com/"
+url = "https://www.tempo.co/"
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+    "User-Agent": "Mozilla/5.0"
 }
 
-session = requests.Session()
-session.headers.update(headers)
-
-r = session.get(url, timeout=30)
+r = requests.get(url, headers=headers)
 soup = BeautifulSoup(r.text, "html.parser")
 
 results = []
 
-# Select popular items directly across the page
-items = soup.select(".popular-item")
+# Find ARTIKEL TRENDING heading
+heading = soup.find(
+    "span",
+    string=lambda text: text and "ARTIKEL TRENDING" in text.strip()
+)
 
-for item in items[:5]:
-    a_tag = item.select_one("h3 a") or item.select_one("a")
-    date_tag = item.select_one(".date")
+if heading:
 
-    if a_tag:
-        title = a_tag.text.strip() or a_tag.get("title", "").strip()
-        link = a_tag.get("href", "").strip()
-        date = date_tag.text.strip() if date_tag else ""
+    # Find the parent section containing ARTIKEL TRENDING
+    section = heading.find_parent("section")
 
-        if title:
-            results.append([title, link, date])
+    if section:
 
-# Write findings to CSV
+        # Titles are inside figcaption links
+        headlines = section.select("figcaption p a")
+
+        for h in headlines:
+            title = h.get_text(" ", strip=True)
+
+            if title:
+                results.append([title])
+
+# Write CSV (ONLY TITLES)
 with open("popular.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.writer(f)
-    writer.writerow(["Title", "URL", "Date"])
-    writer.writerows(results)
 
-print(f"Done. Found {len(results)} titles.")
-for i, row in enumerate(results, 1):
-    print(f"{i}. {row[0]}")
+    writer.writerow(["Title"])
+
+    for row in results:
+        writer.writerow(row)
+
+print(f"Done. Saved popular.csv with {len(results)} titles.")
