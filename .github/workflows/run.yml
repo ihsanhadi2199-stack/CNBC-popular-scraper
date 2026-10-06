@@ -1,4 +1,4 @@
-name: CNBC Popular Scraper
+name: Tempo Trending Scraper
 
 permissions:
   contents: write
@@ -33,18 +33,16 @@ jobs:
       - name: Upload CSV
         uses: actions/upload-artifact@v4
         with:
-          name: popular-csv
+          name: trending-csv
           path: popular.csv
 
       - name: Commit CSV to repo
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git config user.name github-actions
-          git config user.email github-actions@github.com
 
           git add popular.csv
-          git commit -m "update popular csv" || echo "no changes"
+          git commit -m "update Tempo trending csv" || echo "no changes"
 
           git pull --rebase origin main
           git push
